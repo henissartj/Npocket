@@ -1,11 +1,15 @@
-# Npocket - The Modern Network Scanner
+# Npocket - Network Exploration & Security Auditing Tool
 
+```text
     _   __                 __        __ 
    / | / /___  ____  _____/ /_____  / /_
   /  |/ / __ \/ __ \/ ___/ //_/ _ \/ __/
  / /|  / /_/ / /_/ / /__/ ,< /  __/ /_  
 /_/ |_/ .___/\____/\___/_/|_|\___/\__/  
      /_/                                
+```
+
+> **The full power of Nmap, right in your pocket.**
 
 **Npocket** is a highly concurrent, ultra-fast, and modular network scanner built entirely in Python using standard libraries (`asyncio`). It aims to be a modern alternative to Nmap, boasting better performance, built-in intelligent features, and beautiful outputs.
 
