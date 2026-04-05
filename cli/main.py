@@ -59,50 +59,20 @@ def print_custom_help():
         ])
     ]
 
-    left_col = 22
-    right_col = 60
-    inner_width = 87 # fixed width
+    left_col = 24
     
-    # We must explicitly strip ANSI codes when calculating string lengths, 
-    # but Python len() includes them if they are in the string.
-    # Our strings here don't have ANSI inside the padded part except where added explicitly.
-    
-    # ┌───────────────────────────────────────────────────────────────────────────────────────┐
-    print(f"{Colors.OKBLUE}┌" + "─" * inner_width + f"┐{Colors.ENDC}")
     title = "Npocket - Network Exploration & Security Auditing Tool"
-    
-    # Title centered
-    padding = inner_width - len(title)
-    left_pad = padding // 2
-    right_pad = padding - left_pad
-    print(f"{Colors.OKBLUE}│{Colors.ENDC}{Colors.BOLD}{' ' * left_pad}{title}{' ' * right_pad}{Colors.ENDC}{Colors.OKBLUE}│{Colors.ENDC}")
-    
-    # ├───────────────────────────────────────────────────────────────────────────────────────┤
-    print(f"{Colors.OKBLUE}├" + "─" * inner_width + f"┤{Colors.ENDC}")
+    print(f"{Colors.OKBLUE}[*] {Colors.BOLD}{title}{Colors.ENDC}\n")
     
     for i, (header, commands) in enumerate(sections):
-        # Header line (1 space + header + spaces)
-        # Total inside space is inner_width
-        # We use 1 space at start, so spaces after = inner_width - 1 - len(header)
-        header_spaces = inner_width - 1 - len(header)
-        print(f"{Colors.OKBLUE}│{Colors.ENDC} {Colors.BOLD}{Colors.HEADER}{header}{Colors.ENDC}{' ' * header_spaces}{Colors.OKBLUE}│{Colors.ENDC}")
+        print(f"{Colors.OKBLUE}[+] {Colors.BOLD}{Colors.HEADER}{header}{Colors.ENDC}")
         
         for cmd, desc in commands:
-            # Command line
             cmd_padded = cmd.ljust(left_col)
-            # Ensure description does not exceed right_col
-            if len(desc) > right_col:
-                desc = desc[:right_col - 3] + "..."
-            desc_padded = desc.ljust(right_col)
-            # Inner space is: 3 spaces + cmd_padded(22) + 1 space + desc_padded(60) + 1 space = 87
-            print(f"{Colors.OKBLUE}│{Colors.ENDC}{Colors.OKGREEN}   {cmd_padded}{Colors.ENDC} {desc_padded} {Colors.OKBLUE}│{Colors.ENDC}")
+            print(f"    {Colors.OKGREEN}{cmd_padded}{Colors.ENDC} {desc}")
         
-        # Empty line separator (except after last item)
         if i < len(sections) - 1:
-            print(f"{Colors.OKBLUE}│{Colors.ENDC}{' ' * inner_width}{Colors.OKBLUE}│{Colors.ENDC}")
-            
-    # └───────────────────────────────────────────────────────────────────────────────────────┘
-    print(f"{Colors.OKBLUE}└" + "─" * inner_width + f"┘{Colors.ENDC}")
+            print()
 
 def parse_args():
     parser = argparse.ArgumentParser(add_help=False)
