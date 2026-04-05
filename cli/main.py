@@ -18,63 +18,112 @@ from scan.os_fingerprint import async_fingerprint_os
 from report.formatter import print_banner, print_results
 from report.exporter import export_results
 
-class NpocketHelpFormatter(argparse.RawTextHelpFormatter):
-    """Custom formatter to improve help menu spacing."""
-    def _format_action(self, action):
-        parts = super()._format_action(action)
-        if action.help == argparse.SUPPRESS:
-            return parts
-        return parts + '\n'
+class NpocketHelpFormatter(argparse.HelpFormatter):
+    """Custom formatter (fallback if needed)."""
+    pass
+
+def print_custom_help():
+    from utils.ui import Colors
+    
+    sections = [
+        ("TARGET SPECIFICATION", [
+            ("targets", "Target IP, Domain, CIDR, or Range (e.g. 10.0.0.0/24)"),
+            ("-sD, --subdomains", "Enumerate subdomains and bruteforce DNS")
+        ]),
+        ("PORT SPECIFICATION", [
+            ("-p, --ports", "Ports to scan (e.g. 80,443, 1000-2000, all, top100)")
+        ]),
+        ("SCAN TECHNIQUES", [
+            ("-sS, --tcp", "TCP Connect Scan (default, ultra-fast)"),
+            ("-sU, --udp", "UDP Scan (requires elevated privileges)"),
+            ("-sn, --ping-scan", "Ping Scan only (disables port scanning)"),
+            ("-sV, --service", "Service & Version detection (incl. Web Grabber)"),
+            ("-O, --os-fingerprint", "Enable heuristic OS fingerprinting"),
+            ("-B, --bruteforce", "Basic intelligent bruteforce on discovered services")
+        ]),
+        ("PERFORMANCE & TIMING", [
+            ("-T, --timeout", "Connection timeout in seconds (default: 1.5)"),
+            ("-c, --concurrency", "Number of concurrent tasks (default: 500)"),
+            ("--smart", "Smart adaptive timing (adjusts timeouts dynamically)")
+        ]),
+        ("OUTPUT & DISPLAY", [
+            ("-v, --verbose", "Increase verbosity (debug mode)"),
+            ("--no-progress", "Disable the progress bar"),
+            ("-oJ, --output-json", "Export results to a JSON file"),
+            ("-oC, --output-csv", "Export results to a CSV file"),
+            ("-oM, --output-md", "Export results to a Markdown report"),
+            ("-oH, --output-html", "Export results to an HTML Dashboard")
+        ]),
+        ("GENERAL", [
+            ("-h, --help", "Show this help message and exit")
+        ])
+    ]
+
+    left_col = 22
+    right_col = 60
+    # Calculate exact total width for perfect alignment
+    # │ (1) + '   ' (3) + left_col (22) + ' ' (1) + right_col (60) + ' ' (1) + │ (1) = 89
+    total_width = 89
+    inner_width = total_width - 2
+    
+    print(f"{Colors.OKBLUE}┌" + "─" * inner_width + f"┐{Colors.ENDC}")
+    title = "Npocket - Network Exploration & Security Auditing Tool"
+    print(f"{Colors.OKBLUE}│{Colors.ENDC}{Colors.BOLD}{title.center(inner_width)}{Colors.ENDC}{Colors.OKBLUE}│{Colors.ENDC}")
+    print(f"{Colors.OKBLUE}├" + "─" * inner_width + f"┤{Colors.ENDC}")
+    
+    for i, (header, commands) in enumerate(sections):
+        # Header line
+        print(f"{Colors.OKBLUE}│{Colors.ENDC} {Colors.BOLD}{Colors.HEADER}{header.ljust(inner_width - 2)}{Colors.ENDC} {Colors.OKBLUE}│{Colors.ENDC}")
+        for cmd, desc in commands:
+            # Command line
+            cmd_padded = cmd.ljust(left_col)
+            desc_padded = desc.ljust(right_col)
+            print(f"{Colors.OKBLUE}│{Colors.ENDC}   {Colors.OKGREEN}{cmd_padded}{Colors.ENDC} {desc_padded} {Colors.OKBLUE}│{Colors.ENDC}")
+        
+        # Empty line separator (except after last item)
+        if i < len(sections) - 1:
+            print(f"{Colors.OKBLUE}│{Colors.ENDC}" + " " * inner_width + f"{Colors.OKBLUE}│{Colors.ENDC}")
+            
+    print(f"{Colors.OKBLUE}└" + "─" * inner_width + f"┘{Colors.ENDC}")
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description=f"{Colors.BOLD}{Colors.OKGREEN}Network Exploration & Security Auditing Tool{Colors.ENDC}",
-        usage=f"{Colors.OKCYAN}npocket [targets] [options]{Colors.ENDC}",
-        formatter_class=lambda prog: NpocketHelpFormatter(prog, max_help_position=40, width=100),
-        add_help=False
-    )
-    
-    # General
-    gen_group = parser.add_argument_group(f'{Colors.BOLD}{Colors.HEADER}📌 General Options{Colors.ENDC}')
-    gen_group.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS, help='Show this beautiful help message and exit')
+    parser = argparse.ArgumentParser(add_help=False)
     
     # Target specification
-    target_group = parser.add_argument_group(f'{Colors.BOLD}{Colors.OKBLUE}🎯 Target Specification{Colors.ENDC}')
-    target_group.add_argument('targets', nargs='?', help='Target IP, Domain, CIDR, or Range\nExamples: 192.168.1.1, 10.0.0.0/24, example.com')
-    target_group.add_argument('-sD', '--subdomains', action='store_true', help='Enumerate subdomains and bruteforce DNS (for domain targets)')
+    parser.add_argument('targets', nargs='?')
+    parser.add_argument('-sD', '--subdomains', action='store_true')
     
     # Port specification
-    port_group = parser.add_argument_group(f'{Colors.BOLD}{Colors.OKBLUE}🚪 Port Specification{Colors.ENDC}')
-    port_group.add_argument('-p', '--ports', default='top100', help='Ports to scan (default: top100)\nExamples: 80,443,1000-2000, all, top100')
+    parser.add_argument('-p', '--ports', default='top100')
     
     # Scan Types
-    scan_group = parser.add_argument_group(f'{Colors.BOLD}{Colors.OKBLUE}🔍 Scan Techniques{Colors.ENDC}')
-    scan_group.add_argument('-sS', '--tcp', action='store_true', help='TCP Connect Scan (default, ultra-fast)')
-    scan_group.add_argument('-sU', '--udp', action='store_true', help='UDP Scan (requires elevated privileges on some systems)')
-    scan_group.add_argument('-sn', '--ping-scan', action='store_true', help='Ping Scan only (disables port scanning)')
-    scan_group.add_argument('-sV', '--service', action='store_true', help='Service & Version detection (includes Web Info Grabber)')
-    scan_group.add_argument('-O', '--os-fingerprint', action='store_true', help='Enable heuristic OS fingerprinting')
-    scan_group.add_argument('-B', '--bruteforce', action='store_true', help='Basic intelligent bruteforce on discovered services (e.g. FTP)')
+    parser.add_argument('-sS', '--tcp', action='store_true')
+    parser.add_argument('-sU', '--udp', action='store_true')
+    parser.add_argument('-sn', '--ping-scan', action='store_true')
+    parser.add_argument('-sV', '--service', action='store_true')
+    parser.add_argument('-O', '--os-fingerprint', action='store_true')
+    parser.add_argument('-B', '--bruteforce', action='store_true')
     
     # Performance & Timing
-    perf_group = parser.add_argument_group(f'{Colors.BOLD}{Colors.OKBLUE}⚡ Performance & Timing{Colors.ENDC}')
-    perf_group.add_argument('-T', '--timeout', type=float, default=1.5, help='Connection timeout in seconds (default: 1.5)')
-    perf_group.add_argument('-c', '--concurrency', type=int, default=500, help='Number of concurrent async tasks (default: 500)')
-    perf_group.add_argument('--smart', action='store_true', help='Smart adaptive timing (dynamically adjusts timeouts based on latency)')
+    parser.add_argument('-T', '--timeout', type=float, default=1.5)
+    parser.add_argument('-c', '--concurrency', type=int, default=500)
+    parser.add_argument('--smart', action='store_true')
     
     # Output
-    out_group = parser.add_argument_group(f'{Colors.BOLD}{Colors.OKBLUE}📊 Output & Display{Colors.ENDC}')
-    out_group.add_argument('-v', '--verbose', action='store_true', help='Increase verbosity (debug mode)')
-    out_group.add_argument('--no-progress', action='store_true', help='Disable the sleek progress bar')
-    out_group.add_argument('-oJ', '--output-json', help='Export results to a JSON file', metavar='FILE')
-    out_group.add_argument('-oC', '--output-csv', help='Export results to a CSV file', metavar='FILE')
-    out_group.add_argument('-oM', '--output-md', help='Export results to a Markdown report', metavar='FILE')
-    out_group.add_argument('-oH', '--output-html', help='Export results to an Interactive HTML Dashboard', metavar='FILE')
+    parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('--no-progress', action='store_true')
+    parser.add_argument('-oJ', '--output_json')
+    parser.add_argument('-oC', '--output_csv')
+    parser.add_argument('-oM', '--output_md')
+    parser.add_argument('-oH', '--output_html')
+    
+    # General
+    parser.add_argument('-h', '--help', action='store_true')
     
     # Custom help display handling
     if len(sys.argv) == 1 or '-h' in sys.argv or '--help' in sys.argv:
         print_banner()
-        parser.print_help()
+        print_custom_help()
         sys.exit(0)
         
     return parser.parse_args()
