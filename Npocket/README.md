@@ -1,62 +1,113 @@
-# Npocket
+# Npocket - Network Exploration & Security Auditing Tool
 
-**Npocket** est un clone moderne, léger, et modulaire de Nmap écrit entièrement en Python, conçu pour des scans réseau performants, avec une architecture propre et lisible.
-
-## Fonctionnalités Clés
-- **Ultra Rapide (Asyncio)** : Scan complet de ports propulsé par la boucle événementielle `asyncio`, permettant d'analyser des milliers de ports par seconde sans surcharger la mémoire.
-- **Découverte d'Hôtes** : Vérification de la disponibilité asynchrone (ICMP ping via subprocess asynchrones).
-- **Scan de Ports** : Scans TCP Connect et UDP gérés de façon asynchrone pour une performance maximale.
-- **Détection de Services (Améliorée)** : Envoi de multiples payloads (sondes HTTP, FTP, raw) pour maximiser les chances de récupérer la bannière du service en cours d'exécution.
-- **Fingerprinting OS** : Détection basique du système d'exploitation en analysant les valeurs TTL.
-- **Rapports Modernes et Interface Riche** : Affichage console esthétique (couleurs ANSI), barres de progression en temps réel, et export des résultats en JSON, CSV, et Markdown.
-
-## Structure de l'Architecture
-
-Le projet suit des principes stricts de séparation des responsabilités :
-- `cli/` : Gère les arguments et le point d'entrée. Exécute la boucle asynchrone.
-- `parse/` : Responsable du parsing intelligent des IPs (CIDR, plages) et des ports.
-- `scan/` : Cœur de la logique (découverte, scan TCP/UDP, fingerprinting, services). Totalement refactorisé avec `asyncio`.
-- `report/` : Gère le rendu visuel (UI) et l'export dans différents formats.
-- `utils/` : Fournit les configurations globales, couleurs UI, et le système de logging.
-
-## Prérequis
-Npocket fonctionne avec **Python 3.7+** et n'a besoin d'**aucune dépendance externe** (il utilise les modules standard : `asyncio`, `socket`, `subprocess`, `ipaddress`).
-
-## Exemples d'Utilisation
-
-> **Note pour les utilisateurs Windows :** Si la commande `python` vous renvoie une erreur (Microsoft Store), utilisez `py` à la place (ex: `py Npocket/cli/main.py ...`).
-
-Depuis la racine du projet, lancez Npocket via le module `cli.main` :
-
-1. **Scan Simple TCP (Top 100 ports)**
-```bash
-python Npocket/cli/main.py 192.168.1.1
+```text
+    _   __                 __        __ 
+   / | / /___  ____  _____/ /_____  / /_
+  /  |/ / __ \/ __ \/ ___/ //_/ _ \/ __/
+ / /|  / /_/ / /_/ / /__/ ,< /  __/ /_  
+/_/ |_/ .___/\____/\___/_/|_|\___/\__/  
+     /_/                                
 ```
 
-2. **Découverte d'Hôtes Uniquement (Ping Sweep) sur un sous-réseau**
+> **The full power of Nmap, right in your pocket.**
+
+**Npocket** is a highly concurrent, ultra-fast, and modular network scanner built entirely in Python using standard libraries (`asyncio`). It aims to be a modern alternative to Nmap, boasting better performance, built-in intelligent features, and beautiful outputs.
+
+## 🚀 Key Features
+
+- **Ultra-Fast Asynchronous Engine**: Uses `asyncio` to scan thousands of ports in seconds without thread-pool overhead.
+- **Smart Adaptive Timing (`--smart`)**: Automatically adjusts timeouts dynamically based on network latency and packet loss.
+- **Subdomain Enumeration & DNS Bruteforce (`-sD`)**: Automatically enumerates subdomains for any target domain before scanning them.
+- **Intelligent Basic Bruteforce (`-B`)**: Detects open services (like FTP) and attempts common default credentials (`admin:admin`, `root:root`, etc.) to find easy wins immediately.
+- **Web Info Grabber**: During service detection (`-sV`), Npocket extracts the HTTP `<title>` and `Server` headers.
+- **Basic OS Fingerprinting (`-O`)**: Uses TTL-based heuristics to guess the operating system.
+- **Multiple Export Formats**: Export results in JSON (`-oJ`), CSV (`-oC`), Markdown (`-oM`), or a **beautiful Interactive HTML Dashboard (`-oH`)**.
+- **Zero External Dependencies**: Built 100% with Python Standard Library.
+
+## 💻 Installation
+
+1. Ensure you have **Python 3.7+** installed.
+2. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/npocket.git
+   cd npocket
+   ```
+3. Run the scanner:
+   ```bash
+   # On Windows
+   py -m cli.main -h
+   
+   # On Linux/Mac
+   python3 -m cli.main -h
+   ```
+
+## 🛠️ Usage Examples
+
+**Basic Fast Port Scan (Top 100 ports)**
 ```bash
-python Npocket/cli/main.py 192.168.1.0/24 -sn
+py -m cli.main 192.168.1.1
 ```
 
-3. **Scan Complet avec Détection d'OS et Services**
+**Full Port Scan with Service Detection and OS Fingerprint**
 ```bash
-python Npocket/cli/main.py 192.168.1.1-50 -p 22,80,443 -sV -O
+py -m cli.main 10.0.0.1 -p all -sV -O
 ```
 
-4. **Scan Ultra Rapide (Asyncio) sur les 65535 ports avec Export JSON**
+**Domain Target with Subdomain Enumeration & HTML Report**
 ```bash
-python Npocket/cli/main.py 10.0.0.1 -p all -c 1000 -oJ resultats.json
+py -m cli.main example.com -sD -p 80,443 -sV -oH dashboard.html
 ```
 
-5. **Scan UDP**
+**Advanced Mode: Smart Timing + Bruteforce**
 ```bash
-python Npocket/cli/main.py 192.168.1.1 -sU -p 53,161
+py -m cli.main 192.168.1.1 -p 21,22,80 -sV -B --smart
 ```
 
-## Choix Techniques
-- **Asyncio (Moteur Principal)** : Plutôt que d'utiliser de coûteux threads système (`ThreadPoolExecutor`), Npocket utilise `asyncio.open_connection` avec un système de sémaphore pour réguler le nombre de connexions concurrentes (par défaut 500, configurable via `-c`). Cela permet de scanner l'ensemble des 65535 ports TCP en quelques secondes.
-- **Sans Privilèges Spéciaux** : Contrairement à Nmap ou Scapy qui nécessitent les droits root pour forger des paquets bruts (Raw Sockets), Npocket utilise des sockets standards (TCP Connect) pour être utilisable par n'importe quel utilisateur.
-- **Sondes Multiples** : La détection de service ne se contente pas d'attendre passivement une bannière ; elle envoie des sondes HTTP ou génériques si le port reste silencieux, imitant ainsi le comportement des signatures Nmap.
+## 📖 CLI Options
 
----
-Développé avec ❤️ pour l'analyse réseau moderne.
+```text
+📌 General:
+  -h, --help            Show this help message and exit.
+
+🎯 Target Specification:
+  targets               Target IP, domain, CIDR or range
+                        Ex: 192.168.1.1, 10.0.0.0/24, example.com
+  -sD, --subdomains     Enumerate subdomains and bruteforce DNS if target is a domain
+
+🚪 Port Specification:
+  -p, --ports PORTS     Ports to scan (default: top100)
+                        Ex: 80,443,1000-2000, all, top100
+
+🔍 Scan Techniques:
+  -sS, --tcp            TCP Connect Scan (default)
+  -sU, --udp            UDP Scan
+  -sn, --ping-scan      Ping scan only (disables port scan)
+  -sV, --service        Service/Version detection on open ports (includes Web Grabber)
+  -O, --os-fingerprint  Enable basic OS detection
+  -B, --bruteforce      Basic intelligent bruteforce on discovered services (FTP, etc.)
+
+⚡ Performance & Timing:
+  -T, --timeout TIMEOUT Connection timeout in seconds (default: 1.5)
+  -c, --concurrency N   Number of concurrent async tasks (default: 500)
+  --smart               Enable smart adaptive timing (dynamically adjusts timeouts)
+
+📊 Output & Display:
+  -v, --verbose         Increase verbosity (debug mode)
+  --no-progress         Disable progress bar
+  -oJ, --output-json    Export results to JSON format
+  -oC, --output-csv     Export results to CSV format
+  -oM, --output-md      Export results to Markdown format
+  -oH, --output-html    Export results to HTML format (Dashboard)
+```
+
+## 🏗️ Architecture
+
+Npocket uses a clean, modular architecture:
+- `cli/`: Argument parsing and main entry point.
+- `scan/`: Core asynchronous engines (`port_scan.py`, `discover.py`, `service.py`, `subdomain.py`, `bruteforce.py`).
+- `parse/`: Input parsers for IPs, CIDRs, ranges, and ports.
+- `report/`: Formatters, UI colors, and exporters (JSON/CSV/HTML).
+- `utils/`: Logging, Configuration, and Progress bar logic.
+
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
