@@ -29,7 +29,7 @@
 1. Ensure you have **Python 3.7+** installed.
 2. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/npocket.git
+   git clone https://github.com/urbanyl/npocket.git
    cd npocket
    ```
 3. Run the scanner:
