@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "npocket"
+version = "2.0.0"
+description = "Network Exploration & Security Auditing Tool — the modern Nmap alternative"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+keywords = ["network-scanner", "security-audit", "pentesting", "port-scanner", "asyncio"]
+authors = [
+    {name = "Fazer", email = "fazer@npocket.dev"},
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: System :: Networking :: Monitoring",
+    "Topic :: System :: Networking :: Firewalls",
+    "Topic :: System :: Systems Administration",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/urbanyl/npocket"
+"Repository" = "https://github.com/urbanyl/npocket"
+"Bug Tracker" = "https://github.com/urbanyl/npocket/issues"
+"Documentation" = "https://github.com/urbanyl/npocket#readme"
+
+[project.scripts]
+npocket = "cli.main:main"
+
+[tool.setuptools.packages.find]
+include = ["cli*", "parse*", "report*", "scan*", "utils*"]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.8"
+strict = false
+ignore_missing_imports = true
